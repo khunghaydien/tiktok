@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  db:
+    image: mysql:8.0.37
+    container_name: tiktok_container
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 09022000  # Correct password (note the typo correction)
+      MYSQL_DATABASE: tiktok
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - tiktok_network  # Adding a custom network for better isolation
+
+volumes:
+  mysql_data:
+
+networks:
+  tiktok_network:  # Defining the custom network
