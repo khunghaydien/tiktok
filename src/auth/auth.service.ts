@@ -47,22 +47,23 @@ export class AuthService {
         res.cookie('access_token', accessToken, { httpOnly: true })
         return accessToken
     }
-    private async issueTokens(user: User, res: Response) {
-        const payload = { username: user.fullname, sub: user.id }
-        const accessToken = this.jwtService.sign(
-            { ...payload },
-            {
-                secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
-                expiresIn: '150sec',
-            }
-        )
+    private async issueTokens(user: User, response: Response) {
+        const payload = { username: user.fullname, sub: user.id };
+
+        const accessToken = this.jwtService.sign(payload, {
+            secret: this.configService.get<string>('ACCESS_TOKEN_SECRET'),
+            expiresIn: '150sec',
+        });
+
         const refreshToken = this.jwtService.sign(payload, {
             secret: this.configService.get<string>('REFRESH_TOKEN_SECRET'),
-            expiresIn: '7d'
+            expiresIn: '7d',
         });
-        res.cookie('access_token', accessToken, { httpOnly: true });
-        res.cookie('refresh_token', refreshToken, { httpOnly: true });
-        return { user }
+
+        response.cookie('access_token', accessToken, { httpOnly: true });
+        response.cookie('refresh_token', refreshToken, { httpOnly: true });
+
+        return { user };
     }
     async validateUser(loginDto: LoginDto) {
         const user = await this.prisma.user.findUnique({
@@ -78,7 +79,7 @@ export class AuthService {
             where: { email: registerDto.email }
         })
         if (existingUser) {
-            throw new Error('Email is already in use');
+            throw new BadRequestException({ email: 'Email is already in use' });
         }
         const hashedPassword = await bcrypt.hash(registerDto.password, 10)
         const user = await this.prisma.user.create({
@@ -93,7 +94,7 @@ export class AuthService {
     async login(LoginDto: LoginDto, res: Response) {
         const user = await this.validateUser(LoginDto);
         if (!user) {
-            throw new UnauthorizedException('Invalid credentials');
+            throw new BadRequestException({ invalidCredentials: 'Invalid credentials' });
         }
         return this.issueTokens(user, res)
     }
